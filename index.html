@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Voxel Game</title>
+    <title>3D Minecraft-like Game</title>
+    <script src="https://unpkg.com/voxel-engine"></script>
     <style>
         body {
             margin: 0;
@@ -15,92 +16,54 @@
     </style>
 </head>
 <body>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
-
     <script>
-        // Scene setup
-        const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        document.body.appendChild(renderer.domElement);
+        // Create the voxel-engine game
+        const game = voxel.engine({
+            generate: (x, y, z) => y === 1 ? 1 : 0, // Simple flat world
+            chunkDistance: 2, // Load chunks in a 2-radius around the player
+            materials: ['grass', 'dirt', 'stone'], // Block textures
+            texturePath: 'https://raw.githubusercontent.com/deathcap/voxel-textures/master/64/',
+            worldOrigin: [0, 0, 0], // Starting position
+        });
 
-        // Grid and lighting
-        const grid = new THREE.GridHelper(50, 50);
-        scene.add(grid);
+        // Attach the game to the DOM
+        game.appendTo(document.body);
 
-        const light = new THREE.AmbientLight(0xffffff, 0.7);
-        scene.add(light);
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-        directionalLight.position.set(5, 10, 7);
-        scene.add(directionalLight);
+        // Create the player
+        const createPlayer = require('voxel-player')(game);
+        const player = createPlayer('player.png'); // Placeholder texture for the player
+        player.possess(); // Attach controls
+        player.yaw.position.set(0, 10, 0); // Start position
 
-        // Block storage
-        const blocks = [];
+        // Block interaction
+        const highlight = require('voxel-highlight');
+        const hl = highlight(game);
+        hl.on('highlight', (voxelPos) => console.log('Highlighting block:', voxelPos));
+        hl.on('remove', (voxelPos) => console.log('Removing highlight from block:', voxelPos));
 
-        // Raycaster for block placement/removal
-        const raycaster = new THREE.Raycaster();
-        const mouse = new THREE.Vector2();
+        // Place blocks with right-click, remove with left-click
+        game.on('fire', (target, state) => {
+            const pos = game.raycast(game.cameraPosition(), game.cameraVector(), 10);
+            if (!pos) return;
 
-        // Basic block material
-        const blockMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
-
-        // Add block function
-        function addBlock(position) {
-            const blockGeometry = new THREE.BoxGeometry(1, 1, 1);
-            const block = new THREE.Mesh(blockGeometry, blockMaterial);
-            block.position.copy(position).floor().addScalar(0.5);
-            scene.add(block);
-            blocks.push(block);
-        }
-
-        // Remove block function
-        function removeBlock(intersectedBlock) {
-            scene.remove(intersectedBlock);
-            const index = blocks.indexOf(intersectedBlock);
-            if (index > -1) blocks.splice(index, 1);
-        }
-
-        // Mouse events
-        window.addEventListener('click', (event) => {
-            // Normalize mouse coordinates
-            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
-            // Raycasting
-            raycaster.setFromCamera(mouse, camera);
-            const intersects = raycaster.intersectObjects(blocks, false);
-
-            if (event.shiftKey && intersects.length > 0) {
-                // Remove block (Shift + Click)
-                removeBlock(intersects[0].object);
+            if (state.firealt) {
+                game.setBlock(pos.adjacent, 1); // Place a block
             } else {
-                // Add block
-                raycaster.setFromCamera(mouse, camera);
-                const groundIntersects = raycaster.intersectObject(grid, true);
-
-                if (groundIntersects.length > 0) {
-                    addBlock(groundIntersects[0].point);
-                }
+                game.setBlock(pos.voxel, 0); // Remove a block
             }
         });
 
-        // Camera controls
-        camera.position.set(10, 10, 10);
-        camera.lookAt(0, 0, 0);
+        // Game loop
+        game.on('tick', () => {
+            // Update game mechanics here if needed
+        });
 
-        function animate() {
-            requestAnimationFrame(animate);
-            renderer.render(scene, camera);
-        }
-
-        animate();
-
-        // Handle window resizing
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
+        // Handle game exit
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                game.destroy();
+                console.log('Game exited.');
+            }
         });
     </script>
 </body>
