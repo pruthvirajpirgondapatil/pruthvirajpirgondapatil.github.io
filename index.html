@@ -3,68 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Minecraft-like Game</title>
-    <script src="https://unpkg.com/voxel-engine"></script>
-    <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-        }
-        canvas {
-            display: block;
-        }
-    </style>
+    <title>3D Game</title>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
 </head>
-<body>
-    <script>
-        // Create the voxel-engine game
-        const game = voxel.engine({
-            generate: (x, y, z) => y === 1 ? 1 : 0, // Simple flat world
-            chunkDistance: 2, // Load chunks in a 2-radius around the player
-            materials: ['grass', 'dirt', 'stone'], // Block textures
-            texturePath: 'https://raw.githubusercontent.com/deathcap/voxel-textures/master/64/',
-            worldOrigin: [0, 0, 0], // Starting position
-        });
-
-        // Attach the game to the DOM
-        game.appendTo(document.body);
-
-        // Create the player
-        const createPlayer = require('voxel-player')(game);
-        const player = createPlayer('player.png'); // Placeholder texture for the player
-        player.possess(); // Attach controls
-        player.yaw.position.set(0, 10, 0); // Start position
-
-        // Block interaction
-        const highlight = require('voxel-highlight');
-        const hl = highlight(game);
-        hl.on('highlight', (voxelPos) => console.log('Highlighting block:', voxelPos));
-        hl.on('remove', (voxelPos) => console.log('Removing highlight from block:', voxelPos));
-
-        // Place blocks with right-click, remove with left-click
-        game.on('fire', (target, state) => {
-            const pos = game.raycast(game.cameraPosition(), game.cameraVector(), 10);
-            if (!pos) return;
-
-            if (state.firealt) {
-                game.setBlock(pos.adjacent, 1); // Place a block
-            } else {
-                game.setBlock(pos.voxel, 0); // Remove a block
-            }
-        });
-
-        // Game loop
-        game.on('tick', () => {
-            // Update game mechanics here if needed
-        });
-
-        // Handle game exit
-        window.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                game.destroy();
-                console.log('Game exited.');
-            }
-        });
-    </script>
+<body style="margin: 0; overflow: hidden;">
+    <script src="main.js"></script>
 </body>
 </html>
