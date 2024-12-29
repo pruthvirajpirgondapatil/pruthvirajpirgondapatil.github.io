@@ -3,88 +3,105 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Block Editor</title>
+    <title>3D Voxel Game</title>
     <style>
         body {
             margin: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-color: #87CEEB;
             overflow: hidden;
         }
         canvas {
             display: block;
-            background-color: #1E1E1E;
         }
     </style>
 </head>
 <body>
-    <canvas id="gameCanvas"></canvas>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
 
     <script>
-        const canvas = document.getElementById("gameCanvas");
-        const ctx = canvas.getContext("2d");
+        // Scene setup
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
 
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+        // Grid and lighting
+        const grid = new THREE.GridHelper(50, 50);
+        scene.add(grid);
 
-        const blockSize = 40;
-        const blocks = {};
+        const light = new THREE.AmbientLight(0xffffff, 0.7);
+        scene.add(light);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+        directionalLight.position.set(5, 10, 7);
+        scene.add(directionalLight);
 
-        // Draw grid
-        function drawGrid() {
-            for (let x = 0; x < canvas.width; x += blockSize) {
-                for (let y = 0; y < canvas.height; y += blockSize) {
-                    ctx.strokeStyle = "#444";
-                    ctx.strokeRect(x, y, blockSize, blockSize);
-                }
-            }
+        // Block storage
+        const blocks = [];
+
+        // Raycaster for block placement/removal
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+
+        // Basic block material
+        const blockMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
+
+        // Add block function
+        function addBlock(position) {
+            const blockGeometry = new THREE.BoxGeometry(1, 1, 1);
+            const block = new THREE.Mesh(blockGeometry, blockMaterial);
+            block.position.copy(position).floor().addScalar(0.5);
+            scene.add(block);
+            blocks.push(block);
         }
 
-        // Draw blocks
-        function drawBlocks() {
-            for (const key in blocks) {
-                const [x, y] = key.split(",").map(Number);
-                ctx.fillStyle = blocks[key];
-                ctx.fillRect(x * blockSize, y * blockSize, blockSize, blockSize);
-            }
+        // Remove block function
+        function removeBlock(intersectedBlock) {
+            scene.remove(intersectedBlock);
+            const index = blocks.indexOf(intersectedBlock);
+            if (index > -1) blocks.splice(index, 1);
         }
 
-        // Get block position from mouse click
-        function getBlockPosition(x, y) {
-            return [
-                Math.floor(x / blockSize),
-                Math.floor(y / blockSize),
-            ];
-        }
+        // Mouse events
+        window.addEventListener('click', (event) => {
+            // Normalize mouse coordinates
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
-        // Handle mouse click
-        canvas.addEventListener("click", (event) => {
-            const [blockX, blockY] = getBlockPosition(event.offsetX, event.offsetY);
-            const key = `${blockX},${blockY}`;
+            // Raycasting
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(blocks, false);
 
-            if (event.shiftKey) {
+            if (event.shiftKey && intersects.length > 0) {
                 // Remove block (Shift + Click)
-                delete blocks[key];
+                removeBlock(intersects[0].object);
             } else {
                 // Add block
-                blocks[key] = "#8B4513"; // Brown color for blocks
-            }
+                raycaster.setFromCamera(mouse, camera);
+                const groundIntersects = raycaster.intersectObject(grid, true);
 
-            render();
+                if (groundIntersects.length > 0) {
+                    addBlock(groundIntersects[0].point);
+                }
+            }
         });
 
-        // Render function
-        function render() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            drawGrid();
-            drawBlocks();
+        // Camera controls
+        camera.position.set(10, 10, 10);
+        camera.lookAt(0, 0, 0);
+
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
         }
 
-        // Initial render
-        render();
+        animate();
+
+        // Handle window resizing
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
     </script>
 </body>
 </html>
