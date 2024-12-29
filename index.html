@@ -3,75 +3,88 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple Game</title>
+    <title>Block Editor</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
             margin: 0;
-            padding: 0;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
-            background-color: #f0f0f0;
-        }
-        #gameContainer {
-            position: relative;
-            width: 600px;
-            height: 400px;
-            background: #fff;
-            border: 2px solid #ccc;
+            background-color: #87CEEB;
             overflow: hidden;
         }
-        #circle {
-            position: absolute;
-            width: 50px;
-            height: 50px;
-            background-color: red;
-            border-radius: 50%;
-            cursor: pointer;
-        }
-        #score {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            font-size: 18px;
-            font-weight: bold;
+        canvas {
+            display: block;
+            background-color: #1E1E1E;
         }
     </style>
 </head>
 <body>
-    <div id="gameContainer">
-        <div id="score">Score: 0</div>
-        <div id="circle"></div>
-    </div>
+    <canvas id="gameCanvas"></canvas>
 
     <script>
-        const circle = document.getElementById('circle');
-        const scoreDisplay = document.getElementById('score');
-        const gameContainer = document.getElementById('gameContainer');
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
 
-        let score = 0;
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
 
-        function getRandomPosition(max) {
-            return Math.floor(Math.random() * max);
+        const blockSize = 40;
+        const blocks = {};
+
+        // Draw grid
+        function drawGrid() {
+            for (let x = 0; x < canvas.width; x += blockSize) {
+                for (let y = 0; y < canvas.height; y += blockSize) {
+                    ctx.strokeStyle = "#444";
+                    ctx.strokeRect(x, y, blockSize, blockSize);
+                }
+            }
         }
 
-        function moveCircle() {
-            const x = getRandomPosition(gameContainer.offsetWidth - circle.offsetWidth);
-            const y = getRandomPosition(gameContainer.offsetHeight - circle.offsetHeight);
-            circle.style.left = x + 'px';
-            circle.style.top = y + 'px';
+        // Draw blocks
+        function drawBlocks() {
+            for (const key in blocks) {
+                const [x, y] = key.split(",").map(Number);
+                ctx.fillStyle = blocks[key];
+                ctx.fillRect(x * blockSize, y * blockSize, blockSize, blockSize);
+            }
         }
 
-        circle.addEventListener('click', () => {
-            score++;
-            scoreDisplay.textContent = `Score: ${score}`;
-            moveCircle();
+        // Get block position from mouse click
+        function getBlockPosition(x, y) {
+            return [
+                Math.floor(x / blockSize),
+                Math.floor(y / blockSize),
+            ];
+        }
+
+        // Handle mouse click
+        canvas.addEventListener("click", (event) => {
+            const [blockX, blockY] = getBlockPosition(event.offsetX, event.offsetY);
+            const key = `${blockX},${blockY}`;
+
+            if (event.shiftKey) {
+                // Remove block (Shift + Click)
+                delete blocks[key];
+            } else {
+                // Add block
+                blocks[key] = "#8B4513"; // Brown color for blocks
+            }
+
+            render();
         });
 
-        // Start the game by moving the circle initially
-        moveCircle();
+        // Render function
+        function render() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawGrid();
+            drawBlocks();
+        }
+
+        // Initial render
+        render();
     </script>
 </body>
 </html>
