@@ -1,7 +1,77 @@
-<html>
-  <head>
-    <title>
-      impruthvirajpatil
-    </title>
-  </head>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+        }
+        #gameContainer {
+            position: relative;
+            width: 600px;
+            height: 400px;
+            background: #fff;
+            border: 2px solid #ccc;
+            overflow: hidden;
+        }
+        #circle {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background-color: red;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        #score {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <div id="score">Score: 0</div>
+        <div id="circle"></div>
+    </div>
+
+    <script>
+        const circle = document.getElementById('circle');
+        const scoreDisplay = document.getElementById('score');
+        const gameContainer = document.getElementById('gameContainer');
+
+        let score = 0;
+
+        function getRandomPosition(max) {
+            return Math.floor(Math.random() * max);
+        }
+
+        function moveCircle() {
+            const x = getRandomPosition(gameContainer.offsetWidth - circle.offsetWidth);
+            const y = getRandomPosition(gameContainer.offsetHeight - circle.offsetHeight);
+            circle.style.left = x + 'px';
+            circle.style.top = y + 'px';
+        }
+
+        circle.addEventListener('click', () => {
+            score++;
+            scoreDisplay.textContent = `Score: ${score}`;
+            moveCircle();
+        });
+
+        // Start the game by moving the circle initially
+        moveCircle();
+    </script>
+</body>
 </html>
